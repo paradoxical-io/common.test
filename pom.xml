@@ -9,7 +9,7 @@
     
     <groupId>io.paradoxical</groupId>
     <artifactId>common.test</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
     <description>Jersey request correlation and common utils</description>
     <name>common.test</name>
@@ -52,7 +52,8 @@
         <developerConnection>
             scm:git:git@github.com:paradoxical-io/common.test.git
         </developerConnection>
-    </scm>
+      <tag>common.test-1.0</tag>
+  </scm>
 
 
     <developers>
