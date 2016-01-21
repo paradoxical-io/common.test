@@ -11,7 +11,7 @@
     <artifactId>common.test</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    
+    <description>Jersey request correlation and common utils</description>
     <name>common.test</name>
     <url>http://common-test.paradoxical.io</url>
 
@@ -45,6 +45,7 @@
     </properties>
     
     <scm>
+        <url>http://github.com/paradoxical-io/common.test</url>
         <connection>
         	scm:git:git@github.com:paradoxical-io/common.test.git
         </connection>
@@ -53,6 +54,17 @@
         </developerConnection>
     </scm>
 
+
+    <developers>
+        <developer>
+            <id>devshorts</id>
+            <name>Anton Kropp</name>
+        </developer>
+        <developer>
+            <id>jakeswenson</id>
+            <name>Jake Swenson</name>
+        </developer>
+    </developers>
 
     <distributionManagement>
         <snapshotRepository>
