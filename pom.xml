@@ -14,6 +14,13 @@
     <description>Jersey request correlation and common utils</description>
     <name>common.test</name>
     <url>http://common-test.paradoxical.io</url>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <properties>
         <dropwizard.version>0.9.1</dropwizard.version>
