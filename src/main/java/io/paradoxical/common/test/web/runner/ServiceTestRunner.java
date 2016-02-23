@@ -1,5 +1,8 @@
 package io.paradoxical.common.test.web.runner;
 
+import io.dropwizard.jetty.ConnectorFactory;
+import io.dropwizard.server.ServerFactory;
+import io.dropwizard.server.SimpleServerFactory;
 import io.paradoxical.common.test.guice.ModuleOverrider;
 import io.paradoxical.common.test.guice.OverridableModule;
 import com.google.common.base.Strings;
@@ -34,7 +37,7 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
 
     private final TestServiceFactory<TApplication> applicationFactory;
     private final String configPath;
-    private long port;
+    private int port;
 
     private final TConfiguration configuration;
     private TApplication application;
@@ -44,7 +47,7 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
     private ServiceTestRunnerConfig testHostConfiguration;
     private boolean stopped;
 
-    public ServiceTestRunner(TestServiceFactory<TApplication> applicationFactory, @NotNull @NonNull TConfiguration configuration, long port) {
+    public ServiceTestRunner(TestServiceFactory<TApplication> applicationFactory, @NotNull @NonNull TConfiguration configuration, int port) {
         this(applicationFactory, port, configuration, null);
     }
 
@@ -54,7 +57,7 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
 
     private ServiceTestRunner(
             TestServiceFactory<TApplication> applicationFactory,
-            long port,
+            int port,
             @Nullable TConfiguration configuration,
             @Nullable String configPath,
             ConfigOverride... configOverrides) {
@@ -101,15 +104,16 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
      * Customize the dropwizard bootstrapping code to provide a custom logger, and return the provided config
      * This way we aren't bound to files to pass in configs and can override things in code
      */
-    private Bootstrap<TConfiguration> internalInit(long appPort, final List<OverridableModule> overridableModules) {
+    private Bootstrap<TConfiguration> internalInit(int appPort, final List<OverridableModule> overridableModules) {
 
         application = applicationFactory.createService(overridableModules);
 
-        final Bootstrap<TConfiguration> bootstrap = getBootrapper(application, appPort);
+        final Bootstrap<TConfiguration> bootstrap = getBootstrapper(application, appPort);
 
         if (configuration != null) {
             final StaticConfigurationFactory<TConfiguration> staticConfigurationFactory = new StaticConfigurationFactory<TConfiguration>() {
-                @Override public TConfiguration provideConfig() {
+                @Override
+                public TConfiguration provideConfig() {
 
                     initializeLogging();
 
@@ -139,12 +143,11 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
         if (jettyServer != null) {
             return;
         }
-        int retry = 0;
 
         Exception cause = null;
 
         // retry if failures happen due to random port bindings
-        for (; retry < 10; retry++) {
+        for (int retry = 0; retry < 10; retry++) {
             try {
                 final Bootstrap<TConfiguration> bootstrap = internalInit(port, overridableModules);
 
@@ -179,9 +182,7 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
             }
         }
 
-        if (cause != null) {
-            throw new RuntimeException(cause);
-        }
+        throw new RuntimeException(cause);
     }
 
 
@@ -196,7 +197,8 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
         }
 
         return new EnvironmentCommand<TConfiguration>(application, "non-running", "test") {
-            @Override protected void run(final Environment environment, final Namespace namespace, final TConfiguration configuration) throws Exception {
+            @Override
+            protected void run(final Environment environment, final Namespace namespace, final TConfiguration configuration) throws Exception {
 
             }
         };
@@ -252,7 +254,8 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
         return application;
     }
 
-    @Override public void close() throws Exception {
+    @Override
+    public void close() throws Exception {
         if (stopped) {
             return;
         }
@@ -280,23 +283,29 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
         }
     }
 
-    public Bootstrap<TConfiguration> getBootrapper(TApplication application, final long appPort) {
+    public Bootstrap<TConfiguration> getBootstrapper(TApplication application, final int appPort) {
         return new Bootstrap<TConfiguration>(application) {
             @Override
             public void run(TConfiguration configuration, Environment environment) throws Exception {
 
-                final DefaultServerFactory serverFactory = (DefaultServerFactory) configuration.getServerFactory();
+                final ServerFactory serverFactory = configuration.getServerFactory();
 
-                serverFactory.setJerseyRootPath(testHostConfiguration.getApplicationRoot());
+                if (serverFactory instanceof DefaultServerFactory) {
 
-                final HttpConnectorFactory appConnection = new HttpConnectorFactory();
-                appConnection.setPort((int) appPort);
+                    final DefaultServerFactory defaultServerFactory = (DefaultServerFactory) serverFactory;
 
-                final HttpConnectorFactory adminConnection = new HttpConnectorFactory();
-                adminConnection.setPort((int) appPort + 1);
+                    defaultServerFactory.setJerseyRootPath(testHostConfiguration.getApplicationRoot());
 
-                serverFactory.setApplicationConnectors(Lists.newArrayList(appConnection));
-                serverFactory.setAdminConnectors(Lists.newArrayList(adminConnection));
+                    configureServerPort(defaultServerFactory, appPort);
+                }
+                else if (serverFactory instanceof SimpleServerFactory) {
+                    final SimpleServerFactory simpleServerFactory = (SimpleServerFactory) serverFactory;
+                    final ConnectorFactory connectorFactory = simpleServerFactory.getConnector();
+                    configureConnectorPort(connectorFactory, appPort);
+                }
+                else {
+                    throw new UnsupportedOperationException("The provided server factory is not supported for testing.");
+                }
 
                 environment.lifecycle().addServerLifecycleListener(server -> {
                     jettyServer = server;
@@ -305,5 +314,30 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
                 super.run(configuration, environment);
             }
         };
+    }
+
+    private static void configureServerPort(final DefaultServerFactory defaultServerFactory, final int port) {
+        final List<ConnectorFactory> applicationConnectors = defaultServerFactory.getApplicationConnectors();
+        if (applicationConnectors.size() == 1) {
+            final ConnectorFactory connectorFactory = applicationConnectors.get(0);
+            configureConnectorPort(connectorFactory, port);
+        }
+
+        final List<ConnectorFactory> adminConnectors = defaultServerFactory.getAdminConnectors();
+
+        if (adminConnectors.size() == 1) {
+            final ConnectorFactory connectorFactory = adminConnectors.get(0);
+            configureConnectorPort(connectorFactory, port + 1);
+        }
+    }
+
+    private static void configureConnectorPort(final ConnectorFactory connectorFactory, final int port) {
+        if (!(connectorFactory instanceof HttpConnectorFactory)) {
+            return;
+        }
+
+        final HttpConnectorFactory httpConnectorFactory = (HttpConnectorFactory) connectorFactory;
+
+        httpConnectorFactory.setPort(port);
     }
 }
