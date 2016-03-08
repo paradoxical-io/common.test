@@ -2,7 +2,6 @@ package io.paradoxical.common.test.logging;
 
 import ch.qos.logback.classic.Level;
 import io.dropwizard.logging.BootstrapLogging;
-import io.dropwizard.logging.LoggingFactory;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;

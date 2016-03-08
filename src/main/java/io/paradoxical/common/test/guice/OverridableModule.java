@@ -6,7 +6,7 @@ import com.google.inject.Module;
 public abstract class OverridableModule extends AbstractModule implements AutoCloseable {
     public abstract Class<? extends Module> getOverridesModule();
 
-    public void close(){
+    public void close() {
 
     }
 }

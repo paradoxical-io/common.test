@@ -6,7 +6,6 @@ import io.dropwizard.setup.Environment;
 import io.paradoxical.common.test.web.runner.ServiceTestRunner;
 import io.paradoxical.common.test.web.runner.TestApplicationFactory;
 import lombok.Cleanup;
-import lombok.Getter;
 import org.junit.Test;
 
 import javax.ws.rs.GET;

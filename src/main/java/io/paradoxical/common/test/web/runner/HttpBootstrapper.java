@@ -26,9 +26,9 @@ public class HttpBootstrapper<TConfiguration extends Configuration> extends Boot
     /**
      * Creates a new {@link Bootstrap} for the given application.
      *
-     * @param application a Dropwizard {@link Application}
-     * @param serviceTestRunnerConfig
-     * @param httpPort
+     * @param application             a Dropwizard {@link Application}
+     * @param serviceTestRunnerConfig config
+     * @param httpPort                httpPort
      */
     public HttpBootstrapper(
             final Application<TConfiguration> application,
@@ -67,17 +67,6 @@ public class HttpBootstrapper<TConfiguration extends Configuration> extends Boot
         super.run(configuration, environment);
     }
 
-    public void stopServer() throws Exception {
-        if (jettyServer != null && jettyServer.isRunning()) {
-            try {
-                jettyServer.stop();
-            }
-            catch (IllegalStateException ex) {
-                // ok to ignore
-            }
-        }
-    }
-
     private static void configureServerPort(final DefaultServerFactory defaultServerFactory, final int port) {
         final List<ConnectorFactory> applicationConnectors = defaultServerFactory.getApplicationConnectors();
         if (applicationConnectors.size() == 1) {
@@ -101,5 +90,16 @@ public class HttpBootstrapper<TConfiguration extends Configuration> extends Boot
         final HttpConnectorFactory httpConnectorFactory = (HttpConnectorFactory) connectorFactory;
 
         httpConnectorFactory.setPort(port);
+    }
+
+    public void stopServer() throws Exception {
+        if (jettyServer != null && jettyServer.isRunning()) {
+            try {
+                jettyServer.stop();
+            }
+            catch (IllegalStateException ex) {
+                // ok to ignore
+            }
+        }
     }
 }

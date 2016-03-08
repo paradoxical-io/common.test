@@ -56,13 +56,6 @@ public class BaseServiceTestRunner<TConfiguration extends Configuration, TApplic
         this(applicationFactory, configuration, null, ImmutableList.of());
     }
 
-    public BaseServiceTestRunner(
-            @NonNull @Nonnull @NotNull TestApplicationFactory<TApplication> applicationFactory,
-            @Nullable String configPath,
-            ConfigOverride... configOverrides) {
-        this(applicationFactory, null, configPath, ImmutableList.copyOf(configOverrides));
-    }
-
     protected BaseServiceTestRunner(
             @NonNull @Nonnull @NotNull TestApplicationFactory<TApplication> applicationFactory,
             @Nullable TConfiguration configuration,
@@ -76,6 +69,13 @@ public class BaseServiceTestRunner<TConfiguration extends Configuration, TApplic
         configOverrides.forEach(ConfigOverride::addToSystemProperties);
     }
 
+    public BaseServiceTestRunner(
+            @NonNull @Nonnull @NotNull TestApplicationFactory<TApplication> applicationFactory,
+            @Nullable String configPath,
+            ConfigOverride... configOverrides) {
+        this(applicationFactory, null, configPath, ImmutableList.copyOf(configOverrides));
+    }
+
     public BaseServiceTestRunner<TConfiguration, TApplication> run() throws Exception {
         return run(ImmutableList.of());
     }
@@ -84,48 +84,12 @@ public class BaseServiceTestRunner<TConfiguration extends Configuration, TApplic
         return run(ServiceTestRunnerConfig.Default, overridableModules);
     }
 
-    public BaseServiceTestRunner<TConfiguration, TApplication> run(ServiceTestRunnerConfig config) throws Exception {
-        return run(config, ImmutableList.of());
-    }
-
     public BaseServiceTestRunner<TConfiguration, TApplication> run(ServiceTestRunnerConfig config, List<OverridableModule> overridableModules) throws Exception {
         this.testHostConfiguration = config;
 
         startIfRequired(ImmutableList.copyOf(overridableModules));
 
         return this;
-    }
-
-    @Override
-    public void close() throws Exception {
-        if (!isStarted()) {
-            return;
-        }
-
-        TApplication application = getApplication();
-
-        if (application != null &&
-            application instanceof ModuleOverrider &&
-            ((ModuleOverrider) (application)).getOverrideModules() != null) {
-
-            (((ModuleOverrider) application)).getOverrideModules()
-                                             .stream()
-                                             .forEach(OverridableModule::close);
-        }
-
-        started = false;
-    }
-
-    protected Bootstrap<TConfiguration> createBootstrapSystem(TApplication application) {
-        return new Bootstrap<>(application);
-    }
-
-    protected EnvironmentCommand<TConfiguration> createStartupCommand(final TApplication application) {
-        return new EnvironmentCommand<TConfiguration>(application, "non-running", "test") {
-            @Override
-            protected void run(final Environment environment, final Namespace namespace, final TConfiguration configuration) throws Exception {
-            }
-        };
     }
 
     protected void startIfRequired(final ImmutableList<OverridableModule> overridableModules) throws Exception {
@@ -153,6 +117,9 @@ public class BaseServiceTestRunner<TConfiguration extends Configuration, TApplic
     /**
      * Customize the dropwizard bootstrapping code to provide a custom logger, and return the provided config
      * This way we aren't bound to files to pass in configs and can override things in code
+     *
+     * @param overridableModules The list of modules to use
+     * @return a bootstrap system for self-hosting
      */
     protected Bootstrap<TConfiguration> internalInit(final ImmutableList<OverridableModule> overridableModules) {
 
@@ -187,5 +154,41 @@ public class BaseServiceTestRunner<TConfiguration extends Configuration, TApplic
         application.initialize(bootstrap);
 
         return bootstrap;
+    }
+
+    protected EnvironmentCommand<TConfiguration> createStartupCommand(final TApplication application) {
+        return new EnvironmentCommand<TConfiguration>(application, "non-running", "test") {
+            @Override
+            protected void run(final Environment environment, final Namespace namespace, final TConfiguration configuration) throws Exception {
+            }
+        };
+    }
+
+    protected Bootstrap<TConfiguration> createBootstrapSystem(TApplication application) {
+        return new Bootstrap<>(application);
+    }
+
+    public BaseServiceTestRunner<TConfiguration, TApplication> run(ServiceTestRunnerConfig config) throws Exception {
+        return run(config, ImmutableList.of());
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (!isStarted()) {
+            return;
+        }
+
+        TApplication application = getApplication();
+
+        if (application != null &&
+            application instanceof ModuleOverrider &&
+            ((ModuleOverrider) (application)).getOverrideModules() != null) {
+
+            (((ModuleOverrider) application)).getOverrideModules()
+                                             .stream()
+                                             .forEach(OverridableModule::close);
+        }
+
+        started = false;
     }
 }

@@ -1,8 +1,8 @@
 package io.paradoxical.common.test.web.modules;
 
-import io.paradoxical.common.test.guice.OverridableModule;
 import com.google.inject.Module;
 import io.dropwizard.setup.Environment;
+import io.paradoxical.common.test.guice.OverridableModule;
 import lombok.Getter;
 import org.mockito.Mockito;
 
@@ -15,7 +15,8 @@ public class MockEnvironmentModule<T> extends OverridableModule {
     @Getter
     private final T configInstance;
 
-    @Getter private Environment mockEnvironment = Mockito.mock(Environment.class);
+    @Getter
+    private Environment mockEnvironment = Mockito.mock(Environment.class);
 
 
     public MockEnvironmentModule(Class<T> configClass) {
@@ -30,11 +31,13 @@ public class MockEnvironmentModule<T> extends OverridableModule {
         configInstance = config;
     }
 
-    @Override public Class<? extends Module> getOverridesModule() {
+    @Override
+    public Class<? extends Module> getOverridesModule() {
         return null;
     }
 
-    @Override protected void configure() {
+    @Override
+    protected void configure() {
         bind(Environment.class).toInstance(mockEnvironment);
 
         bind(configClass).toInstance(configInstance);

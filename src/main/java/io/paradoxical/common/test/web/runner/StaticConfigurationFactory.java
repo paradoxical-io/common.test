@@ -30,15 +30,18 @@ public abstract class StaticConfigurationFactory<T> extends ConfigurationFactory
         super(null, null, new ObjectMapper(), "");
     }
 
-    @Override public T build(final ConfigurationSourceProvider provider, final String path) throws IOException, ConfigurationException {
+    @Override
+    public T build(final ConfigurationSourceProvider provider, final String path) throws IOException, ConfigurationException {
         return provideConfig();
     }
 
-    @Override public T build(final File file) throws IOException, ConfigurationException {
+    @Override
+    public T build(final File file) throws IOException, ConfigurationException {
         return provideConfig();
     }
 
-    @Override public T build() throws IOException, ConfigurationException {
+    @Override
+    public T build() throws IOException, ConfigurationException {
         return provideConfig();
     }
 
