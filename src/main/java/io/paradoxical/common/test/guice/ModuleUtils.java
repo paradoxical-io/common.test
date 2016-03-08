@@ -10,8 +10,8 @@ import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
 
-public class ModuleUtils{
-    public static List<Module> mergeModules(List<Module> modules, OverridableModule ... overrides){
+public class ModuleUtils {
+    public static List<Module> mergeModules(List<Module> modules, OverridableModule... overrides) {
         return mergeModules(modules, Arrays.asList(overrides));
     }
 

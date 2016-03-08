@@ -10,16 +10,13 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.testing.ConfigOverride;
 import io.paradoxical.common.test.guice.OverridableModule;
 import lombok.NonNull;
-import org.eclipse.jetty.server.Server;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.concurrent.Immutable;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.UriBuilder;
 import java.net.BindException;
 import java.net.URI;
-import java.util.List;
 
 public class ServiceTestRunner<TConfiguration extends Configuration, TApplication extends Application<TConfiguration>>
         extends BaseServiceTestRunner<TConfiguration, TApplication> {
@@ -31,14 +28,6 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
             @NonNull @Nonnull @NotNull TConfiguration configuration,
             int port) {
         this(applicationFactory, port, configuration, null, ImmutableList.of());
-    }
-
-    public ServiceTestRunner(
-            @NonNull @Nonnull @NotNull TestApplicationFactory<TApplication> applicationFactory,
-            int port,
-            @Nullable String configPath,
-            ConfigOverride... configOverrides) {
-        this(applicationFactory, port, null, configPath, ImmutableList.copyOf(configOverrides));
     }
 
     private ServiceTestRunner(
@@ -53,20 +42,20 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
         this.port = port;
     }
 
+    public ServiceTestRunner(
+            @NonNull @Nonnull @NotNull TestApplicationFactory<TApplication> applicationFactory,
+            int port,
+            @Nullable String configPath,
+            ConfigOverride... configOverrides) {
+        this(applicationFactory, port, null, configPath, ImmutableList.copyOf(configOverrides));
+    }
+
     public URI getServerUri() {
         return getServerUri("http");
     }
 
     public URI getServerUri(String scheme) {
         return getUri(scheme, getServerPort());
-    }
-
-    public URI getAdminUri() {
-        return getAdminUri("http");
-    }
-
-    public URI getAdminUri(String scheme) {
-        return getUri(scheme, getAdminPort());
     }
 
     private URI getUri(String scheme, int port) {
@@ -80,8 +69,44 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
         return port;
     }
 
+    public URI getAdminUri() {
+        return getAdminUri("http");
+    }
+
+    public URI getAdminUri(String scheme) {
+        return getUri(scheme, getAdminPort());
+    }
+
     public int getAdminPort() {
         return getServerPort() + 1;
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (!isStarted()) {
+            return;
+        }
+
+        final HttpBootstrapper<TConfiguration> currentBootstrap = getCurrentBootstrap();
+
+        currentBootstrap.stopServer();
+
+        super.close();
+    }
+
+    @Override
+    protected Bootstrap<TConfiguration> createBootstrapSystem(TApplication application) {
+        return new HttpBootstrapper<>(application, getTestHostConfiguration(), port);
+    }
+
+    /**
+     * Dynamically determine which startup command to choose. If no http return a fake startup command
+     * This initializes the bootstrapper and any downstream environment stage (mostly for Guice's bootstrapper to get
+     * access to the dropwizard configuration).
+     */
+    @Override
+    protected EnvironmentCommand<TConfiguration> createStartupCommand(final TApplication application) {
+        return new ServerCommand<>(application);
     }
 
     @Override
@@ -107,43 +132,15 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
                     continue;
                 }
 
-                throw new RuntimeException(ex);
+                throw ex;
             }
         }
 
-        throw new RuntimeException(cause);
-    }
-
-    /**
-     * Dynamically determine which startup command to choose. If no http return a fake startup command
-     * This initializes the bootstrapper and any downstream environment stage (mostly for Guice's bootstrapper to get
-     * access to the dropwizard configuration).
-     */
-    @Override
-    protected EnvironmentCommand<TConfiguration> createStartupCommand(final TApplication application) {
-        return new ServerCommand<>(application);
-    }
-
-    @Override
-    protected Bootstrap<TConfiguration> createBootstrapSystem(TApplication application) {
-        return new HttpBootstrapper<>(application, getTestHostConfiguration(), port);
+        throw cause;
     }
 
     @Override
     protected HttpBootstrapper<TConfiguration> getCurrentBootstrap() {
         return (HttpBootstrapper<TConfiguration>) super.getCurrentBootstrap();
-    }
-
-    @Override
-    public void close() throws Exception {
-        if (!isStarted()) {
-            return;
-        }
-
-        final HttpBootstrapper<TConfiguration> currentBootstrap = getCurrentBootstrap();
-
-        currentBootstrap.stopServer();
-
-        super.close();
     }
 }

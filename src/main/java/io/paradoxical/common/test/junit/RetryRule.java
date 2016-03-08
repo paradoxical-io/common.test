@@ -26,9 +26,10 @@ public class RetryRule implements TestRule {
                     try {
                         base.evaluate();
                         return;
-                    } catch (Throwable t) {
+                    }
+                    catch (Throwable t) {
                         caughtThrowable = t;
-                        System.err.println(description.getDisplayName() + ": run " + (i+1) + " failed");
+                        System.err.println(description.getDisplayName() + ": run " + (i + 1) + " failed");
                     }
                 }
                 System.err.println(description.getDisplayName() + ": giving up after " + retryCount + " failures");

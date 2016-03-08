@@ -16,7 +16,7 @@ public class ReflectionApplicationFactory<TApplication extends Application<? ext
     }
 
     @Override
-    public TApplication createService(final List<OverridableModule> overridableModules) {
+    public TApplication createService(final List<OverridableModule> overrideModules) {
         try {
             return applicationClass.newInstance();
         }
