@@ -3,6 +3,9 @@ jdk:
 - oraclejdk8
 after_success:
 - ./deploy.sh
+before_install:
+- openssl aes-256-cbc -K $GPG_PRIVATE_KEY_ENCRYPTION_KEY -iv $GPG_PRIVATE_KEY_ENCRYPTION_IV
+  -in gpg/paradoxical-io-private.gpg.enc -out gpg/paradoxical-io-private.gpg -d
 env:
   global:
   - secure: HYPUvP6BAsP108ySn1Hj7Wg4fGlSlXbCr9bKWoKx8H5HzFenCcsTJs4gyWOpf7+IMcEwNs5CYtK3nsriyqq/ORtGQR3oaLIdQSDc7lZ/LeAEud6ZZBIIXsYwwu7BnaaHVWa2CqEeX8qlxIQ7N4FatvMBlDJeySbL+FENWizycnH0tEpFHzlR5oRDKmh3lK0LvnWzlY4wkAK6JT9QpxwiRisDNej9G1fepB6Wt8ZowrPDkyT3clqI3dvabdGQoUMx6GhAU+2qgrAZ74FOtJj1PqrFATJosdmvDKmMYyQc7MAxOi4LCv2ewxthC9Xbzvy160kgyAoAJVPC4oysefIuZsq46K5NMqOOeLBRzhlU/UUMzhgoPe5qBvy31KZ8Xbv1B++U2JDb7e94ODyAAJg0GnUZdGeJvJ7D05/yDV2utpf02EUzD5CB0AgcRHKfrQ+NbzCZU4NR0Ld/CWSPD/9kkyjQ56mFQAA/VvcnvVJNmpeKlqz7DHGirTOOjgox8Tby+pEaTt7PKQ0LFGAii65ZXarGEcyWjO592HmJHDRmfcJg60ItsxM6SnwH/EQGsyCE4aOYVsLzKxsctCf71KynnJp3FV1JTvk2lTepLe6bz+F5oLr8MtUZR9Zezy5GA0o3ldiqx5Qb1dQ5XlRjIH920253fTcJH0CuEbjU5Jazzf0=
