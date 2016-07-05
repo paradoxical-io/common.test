@@ -13,7 +13,8 @@ import javax.ws.rs.Path;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 public class ServiceTestRunnerTests extends TestBase {
 

@@ -1,16 +1,19 @@
 package io.paradoxical.common.test.web.runner;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.dropwizard.Application;
 import io.dropwizard.Configuration;
 import io.dropwizard.cli.EnvironmentCommand;
+import io.dropwizard.logging.AppenderFactory;
 import io.dropwizard.logging.ConsoleAppenderFactory;
 import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.ConfigOverride;
+import io.dropwizard.testing.POJOConfigurationFactory;
 import io.paradoxical.common.test.guice.ModuleOverrider;
 import io.paradoxical.common.test.guice.OverridableModule;
 import lombok.AccessLevel;
@@ -128,32 +131,32 @@ public class BaseServiceTestRunner<TConfiguration extends Configuration, TApplic
         final Bootstrap<TConfiguration> bootstrap = createBootstrapSystem(application);
 
         if (configuration != null) {
-            final StaticConfigurationFactory<TConfiguration> staticConfigurationFactory = new StaticConfigurationFactory<TConfiguration>() {
-                @Override
-                public TConfiguration provideConfig() {
 
-                    initializeLogging();
+            setupLogging();
 
-                    return configuration;
-                }
+            final POJOConfigurationFactory<TConfiguration> pojoConfigurationFactory =
+                    new POJOConfigurationFactory<>(configuration);
 
-                private void initializeLogging() {
-                    final DefaultLoggingFactory loggingFactory = ((DefaultLoggingFactory) configuration.getLoggingFactory());
-
-                    final ConsoleAppenderFactory testAppender = new ConsoleAppenderFactory();
-
-                    testAppender.setLogFormat(testHostConfiguration.getLogFormat());
-
-                    loggingFactory.setAppenders(ImmutableList.of(testAppender));
-                }
-            };
-
-            bootstrap.setConfigurationFactoryFactory((klass, validator, objectMapper, propertyPrefix) -> staticConfigurationFactory);
+            bootstrap.setConfigurationFactoryFactory((klass, validator, objectMapper, propertyPrefix) -> pojoConfigurationFactory);
         }
 
         application.initialize(bootstrap);
 
         return bootstrap;
+    }
+
+    private void setupLogging() {
+        final DefaultLoggingFactory loggingFactory = ((DefaultLoggingFactory) configuration.getLoggingFactory());
+
+        if (loggingFactory == null) {
+            return;
+        }
+
+        final ConsoleAppenderFactory<ILoggingEvent> testAppender = new ConsoleAppenderFactory<>();
+
+        testAppender.setLogFormat(testHostConfiguration.getLogFormat());
+
+        loggingFactory.setAppenders(ImmutableList.of(testAppender));
     }
 
     protected EnvironmentCommand<TConfiguration> createStartupCommand(final TApplication application) {
