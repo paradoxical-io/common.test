@@ -1,51 +1,58 @@
 package io.paradoxical.common.test.guice;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
 
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
 
 public class ModuleUtils {
-    public static List<Module> mergeModules(List<Module> modules, OverridableModule... overrides) {
-        return mergeModules(modules, Arrays.asList(overrides));
+    public static ImmutableList<Module> mergeModules(Collection<Module> modules, OverridableModule... overrides) {
+        return mergeModules(modules, ImmutableList.copyOf(overrides));
     }
 
-    public static List<Module> mergeModules(List<Module> modules, List<OverridableModule> overrides) {
-        final List<OverridableModule> additiveModules =
-                overrides != null ?
-                overrides.stream().filter(i -> i.getOverridesModule() == null).collect(toList()) :
-                Lists.newArrayList();
+    public static ImmutableList<Module> mergeModules(Collection<Module> modules, List<OverridableModule> overrides) {
+        final ImmutableList<OverridableModule> additiveModules =
+                Optional.ofNullable(overrides)
+                        .map(overrideList -> overrideList.stream()
+                                                         .filter(i -> i.getOverridesModule() == null)
+                                                         .collect(toList()))
+                        .map(ImmutableList::copyOf)
+                        .orElseGet(ImmutableList::of);
 
-        final List<Module> overridenModules =
+
+        final List<Module> overriddenModules =
                 modules.stream()
                        .map(defaultModule -> {
                            if (overrides == null) {
                                return defaultModule;
                            }
 
-                           final Optional<OverridableModule> first =
+                           final List<OverridableModule> overrideModules =
                                    overrides.stream()
                                             .filter(overridingModule ->
                                                             overridingModule.getOverridesModule() != null &&
-                                                            defaultModule.getClass().isAssignableFrom(overridingModule.getOverridesModule()))
-                                            .findFirst();
+                                                            defaultModule.getClass()
+                                                                         .isAssignableFrom(overridingModule.getOverridesModule()))
+                                            .collect(toList());
 
-                           if (first.isPresent()) {
-                               return Modules.override(defaultModule).with(first.get());
+                           if (!overrideModules.isEmpty()) {
+                               return Modules.override(defaultModule)
+                                             .with(overrideModules);
                            }
 
                            return defaultModule;
                        })
                        .collect(toList());
+
         if (additiveModules.size() > 0) {
-            overridenModules.addAll(additiveModules);
+            overriddenModules.addAll(additiveModules);
         }
 
-        return overridenModules;
+        return ImmutableList.copyOf(overriddenModules);
     }
 }

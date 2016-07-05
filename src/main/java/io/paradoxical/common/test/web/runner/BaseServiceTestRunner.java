@@ -7,14 +7,12 @@ import com.google.common.collect.ImmutableMap;
 import io.dropwizard.Application;
 import io.dropwizard.Configuration;
 import io.dropwizard.cli.EnvironmentCommand;
-import io.dropwizard.logging.AppenderFactory;
 import io.dropwizard.logging.ConsoleAppenderFactory;
 import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.POJOConfigurationFactory;
-import io.paradoxical.common.test.guice.ModuleOverrider;
 import io.paradoxical.common.test.guice.OverridableModule;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -183,13 +181,8 @@ public class BaseServiceTestRunner<TConfiguration extends Configuration, TApplic
 
         TApplication application = getApplication();
 
-        if (application != null &&
-            application instanceof ModuleOverrider &&
-            ((ModuleOverrider) (application)).getOverrideModules() != null) {
-
-            (((ModuleOverrider) application)).getOverrideModules()
-                                             .stream()
-                                             .forEach(OverridableModule::close);
+        if (application instanceof AutoCloseable) {
+            ((AutoCloseable) application).close();
         }
 
         started = false;

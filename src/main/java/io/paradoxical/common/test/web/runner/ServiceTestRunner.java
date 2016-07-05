@@ -1,5 +1,6 @@
 package io.paradoxical.common.test.web.runner;
 
+import com.codahale.metrics.health.HealthCheck;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.dropwizard.Application;
@@ -7,9 +8,11 @@ import io.dropwizard.Configuration;
 import io.dropwizard.cli.EnvironmentCommand;
 import io.dropwizard.cli.ServerCommand;
 import io.dropwizard.setup.Bootstrap;
+import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.ConfigOverride;
 import io.paradoxical.common.test.guice.OverridableModule;
 import lombok.NonNull;
+import net.sourceforge.argparse4j.inf.Namespace;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -106,7 +109,19 @@ public class ServiceTestRunner<TConfiguration extends Configuration, TApplicatio
      */
     @Override
     protected EnvironmentCommand<TConfiguration> createStartupCommand(final TApplication application) {
-        return new ServerCommand<>(application);
+        return new ServerCommand<TConfiguration>(application) {
+            @Override
+            protected void run(final Environment environment, final Namespace namespace, final TConfiguration configuration) throws Exception {
+                environment.healthChecks().register("test", new HealthCheck() {
+                    @Override
+                    protected Result check() throws Exception {
+                        return Result.healthy();
+                    }
+                });
+
+                super.run(environment, namespace, configuration);
+            }
+        };
     }
 
     @Override
